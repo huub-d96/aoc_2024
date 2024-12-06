@@ -1,7 +1,7 @@
 use std::fs;
 
 //Check if a input code is invalid
-fn is_invalid(nums: &Vec<i32>) -> (bool, usize) {
+fn is_invalid(nums: &[i32]) -> (bool, usize) {
     let mut inc: bool = false;
     let mut invalid: bool = false;
     
@@ -23,7 +23,7 @@ fn is_invalid(nums: &Vec<i32>) -> (bool, usize) {
         i += 1;
     }
 
-    return (invalid, i);
+    (invalid, i)
 
 }
 
