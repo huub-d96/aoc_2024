@@ -59,7 +59,7 @@ fn part_1(data: &str) -> u32 {
     }
 
     // Print map :D
-    //     print!("Seconds: {} {}\n", seconds, (qs[0]+qs[2])*(qs[1]+qs[3]));
+    //     print!("Seconds: {} {}\n", seconds);
     //     for y in 0..bathroom.length{
     //         for x in 0..bathroom.width{
                 
