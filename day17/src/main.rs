@@ -47,8 +47,6 @@ impl Emulator {
                 break;
             }
 
-            // println!("{:?}", self.registers);
-
             let p = program[self.pointer];
             let o = program[self.pointer+1];
             self.pointer += 2;
