@@ -1,11 +1,12 @@
-use std::fs;
+use std::collections::HashMap;
+use std::{char, fs};
 use std::time::Instant;
 use std::cmp::{min, max};
 
-const KEYPAD: [[char;3];4] = [['7','8','9'], ['4', '5', '6'], ['1', '2', '4'], ['#', '0', 'A']];
+const KEYPAD: [[char;3];4] = [['7','8','9'], ['4', '5', '6'], ['1', '2', '3'], ['#', '0', 'A']];
 const DIRPAD: [[char;3];2] = [['#','^','A'], ['<', 'v', '>']];
 
-pub fn manhattan(x1:usize, y1:usize, x2:usize, y2:usize) -> usize{
+fn manhattan(x1:usize, y1:usize, x2:usize, y2:usize) -> usize{
 
     max(x1, x2) - min(x1, x2) + max(y1,y2) - min(y1, y2)
 }
@@ -13,7 +14,7 @@ pub fn manhattan(x1:usize, y1:usize, x2:usize, y2:usize) -> usize{
 fn backtrack_keypad(p: (usize, usize), e: (usize, usize), map: &[[char;3];4], path: String) -> Vec<String>{
 
     if p == e{
-        let out = Vec::from([path]);
+        let out = Vec::from([path+"A"]);
         return out
     }
 
@@ -31,6 +32,10 @@ fn backtrack_keypad(p: (usize, usize), e: (usize, usize), map: &[[char;3];4], pa
             continue;
         }
 
+        if !path.ends_with(dir) && path.contains(dir){
+            continue;
+        }
+
         if manhattan(p.0, p.1, e.0, e.1) - 1  == manhattan(x_next as usize, y_next as usize, e.0, e.1){
             final_path.append(&mut backtrack_keypad((x_next as usize, y_next as usize), e, map, path.clone() + dir));
         }   
@@ -41,7 +46,7 @@ fn backtrack_keypad(p: (usize, usize), e: (usize, usize), map: &[[char;3];4], pa
 fn backtrack_dirpad(p: (usize, usize), e: (usize, usize), map: &[[char;3];2], path: String) -> Vec<String>{
 
     if p == e{
-        let out = Vec::from([path]);
+        let out = Vec::from([path+"A"]);
         return out
     }
 
@@ -59,7 +64,12 @@ fn backtrack_dirpad(p: (usize, usize), e: (usize, usize), map: &[[char;3];2], pa
             continue;
         }
 
+        if !path.ends_with(dir) && path.contains(dir){
+            continue;
+        }
+
         if manhattan(p.0, p.1, e.0, e.1) - 1 == manhattan(x_next as usize, y_next as usize, e.0, e.1){
+             
             final_path.append(&mut backtrack_dirpad((x_next as usize, y_next as usize), e, map, path.clone() + dir));
         }   
     } 
@@ -91,79 +101,118 @@ fn find_dirpad_loc(button: &char) -> (usize, usize){
 }
 
 
+fn find_sequence(input: String, depth: u32, max_depth: u32, cache: &mut HashMap<(String, u32), usize> ) -> usize{
 
-fn part_1(_data: &str) -> u32 {
+    if cache.contains_key(&(input.clone(), depth)){
+        return cache[&(input, depth)]
+    }
+
+    if depth == max_depth{
+        return input.len();
+    }
+
+    let mut r_pos = find_dirpad_loc(&'A'); 
+    let mut sequence = 0;
+
+    for c in input.chars(){
+        let target = find_dirpad_loc(&c);    
+
+        let outputs = backtrack_dirpad(r_pos, target, &DIRPAD, "".to_string());
+
+        //Always hit the left most key first
+        let out = {
+            if outputs.len()==2 {
+                if outputs[0].starts_with("<") {
+                    &outputs[0]
+                } else if outputs[1].starts_with("<") {
+                    &outputs[1]
+                } else if outputs[0].starts_with("^") || outputs[0].starts_with("v") {
+                    &outputs[0]
+                } else if outputs[1].starts_with("^") || outputs[1].starts_with("v") {
+                    &outputs[1]
+                } else{
+                    &outputs[0]
+                }
+            } else {
+                &outputs[0]
+            }
+        };
+        
+        r_pos = target;
+        sequence += find_sequence(out.to_string(), depth+1, max_depth, cache);
+    }
+
+    cache.insert((input, depth), sequence);
+
+    sequence
+}
+
+
+fn solve_sequence(data: &str, n_dirpads: u32) -> usize {
+
+    let mut sum = 0;
+    let mut cache = HashMap::new();
+
+    for code in data.lines(){
+
     
-    let code = "029A";
+    
+    let mut sequence = 0;
 
     let mut r1_pos = find_keypad_loc(&'A'); //A button
-    let mut r2_pos = find_dirpad_loc(&'A'); //A button
-    let mut r3_pos = find_dirpad_loc(&'A'); //A button
-
-    let mut seqs: Vec<String> = Vec::from(["".to_string()]);
-
-    //Robot 1 possible routes
+    
+    //Do robot 1 manual, since it uses a different keypad
     for c in code.chars(){
 
         let target = find_keypad_loc(&c);
 
-        let output = backtrack_keypad(r1_pos, target, &KEYPAD, "".to_string());
+        let outputs = backtrack_keypad(r1_pos, target, &KEYPAD, "".to_string());
 
-        println!("{:?}", output);
-
-        let mut new_seqs = Vec::new();
-        for s in &seqs{
-            for o in &output{
-
-                new_seqs.push([s, o, "A"].join(""))
+        let out = {
+            if outputs.len()==2 {
+                if outputs[0].starts_with("<") {
+                    &outputs[0]
+                } else if outputs[1].starts_with("<") {
+                    &outputs[1]
+                } else if outputs[0].starts_with("^") || outputs[0].starts_with("v") {
+                    &outputs[0]
+                } else if outputs[1].starts_with("^") || outputs[1].starts_with("v") {
+                    &outputs[1]
+                } else{
+                    &outputs[0]
+                }
+            } else {
+                &outputs[0]
             }
-        }
-        seqs = new_seqs;
+        };
 
-        r1_pos = target;
+        r1_pos = target;  
+
+        //Recursively find sequence lengths for directional pad robots
+        sequence += &find_sequence(out.to_string(), 1, 1+n_dirpads, &mut cache);
     }
 
-    println!("{:?}", seqs);
+    sum  += sequence*code.replace("A", "").parse::<usize>().unwrap();
 
-    //Robot 2 possible routes
-    for seq in seqs.clone(){
-        
-        for c in seq.chars(){
-
-            let target = find_dirpad_loc(&c);
-            
-    
-            let output = backtrack_dirpad(r2_pos, target, &DIRPAD, "".to_string());
-            println!("{:?}", output);
-        
-            // let mut new_seqs = Vec::new();
-            // for s in &seqs{
-            //     for o in &output{
-    
-            //         new_seqs.push([s, o, "A"].join(""))
-            //     }
-            // }
-            // println!("{:?}",new_seqs);
-            // seqs = new_seqs;
-    
-            r2_pos = target;
-        }
-
-    }
-
-
-
-0
 }
 
-fn part_2(_data: &str) -> u32 {
+sum
+}
 
-0    
+fn part_1(data: &str) -> usize {
+
+    solve_sequence(data, 2)
+}
+    
+
+fn part_2(data: &str) -> usize {
+
+    solve_sequence(data, 25)
 }
 
 
 fn main() {
-    let data= fs::read_to_string("src/test.txt").expect("Failed to read");
+    let data= fs::read_to_string("src/data.txt").expect("Failed to read");
 
     println!("***Day 21***");
 
