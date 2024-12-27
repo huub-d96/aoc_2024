@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::time::Instant;
 
@@ -31,43 +31,63 @@ fn find_output<'a>(signals: &mut HashMap<&'a str, u8>, gates: &mut Vec<Vec<&'a s
 
 fn part_1(data: &str) -> u64 {
 
-    let (signal_data, mut gates) = data.split_once("\r\n\r\n").map(|(s, g)| (s, g.split("\r\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
+    let (signal_data, mut gates) = data.split_once("\n\n").map(|(s, g)| (s, g.trim().split("\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
 
     let mut signals: HashMap<&str, u8> = signal_data.split("\n").map(|line| line.split_once(": ").map(|(k,v)| (k, v.as_bytes()[0] - b'0')).unwrap()).collect();
-
-
+		
     find_output(&mut signals, &mut gates)
 }
 
-fn part_2(data: &str) -> u32{
+fn part_2(data: &str) -> String{
 
-    let (signal_data, mut gates) = data.split_once("\r\n\r\n").map(|(s, g)| (s, g.split("\r\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
+    let (signal_data, gates) = data.split_once("\n\n").map(|(s, g)| (s, g.trim().split("\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
 
-    let mut signals: HashMap<&str, u8> = signal_data.split("\n").map(|line| line.split_once(": ").map(|(k,v)| (k, v.as_bytes()[0] - b'0')).unwrap()).collect();
+    let mut culprits = HashSet::new();
 
-    let (mut x, mut y) = (0,0);
+	for i in 0..64{
+		let num = format!("{:02}", i);
+		let mut a = "";
+		let mut b = "";
+		let mut c = "";
 
-    for (k,v) in &signals{
+		//Check if inputs map to the right outputs, if not they must be swapped
+	    for gate in &gates{
 
-        if k.starts_with("x"){
-            build_output(k, *v, &mut x);
-        }
+		    if (gate[0].starts_with("x") || gate[0].starts_with("y")) && &gate[0].as_bytes()[1..] == num.as_bytes(){
+				
+				if gate[1] == "XOR" {
+					a = gate[4];
 
-        if k.starts_with("y"){
-            build_output(k, *v, &mut y);
-        }
-    }
+					for sg in &gates{
+						if (sg[0] == a || sg[2] == a)  && (sg[1] =="XOR"){
+							if sg[1] =="XOR" && gate[0].as_bytes()[1..] != sg[4].as_bytes()[1..]{
 
-    let target_output = x & y;    
+								culprits.insert(sg[4].to_string());
+								let out_wire = gate[0].replace("x","z").replace("y","z");
+								culprits.insert(out_wire);
+							}
+						} else if (sg[0] == a || sg[2] == a) && (sg[1] == "AND") {					   
+						   c = sg[4];
+						}
+					}
+				} else if gate[1] == "AND"{
+						b = gate[4];
+				} 			    	
+			}
+		}
 
-    let actual_output = find_output(&mut signals, &mut gates);
+		// If we cannot find the output signal of the second AND gate, the XOR and AND gate outputs must be swapped
+		if c == "" && a!= "" && b !="" && i > 0{
+			culprits.insert(a.to_string());
+			culprits.insert(b.to_string());
+		}
 
-    println!("{} {} {} {}", x, y, target_output, actual_output);
-    println!("{:08b}", target_output);
-    println!("{:08b}", actual_output);
-    println!("{:08b}", target_output ^ actual_output);
+	}
 
-    0
+    let mut output: Vec<_> = culprits.iter().map(|x| x.clone()).collect();
+    output.sort();
+
+    output.join(",")
 }
 
 
