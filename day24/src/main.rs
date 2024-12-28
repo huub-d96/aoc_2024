@@ -31,16 +31,16 @@ fn find_output<'a>(signals: &mut HashMap<&'a str, u8>, gates: &mut Vec<Vec<&'a s
 
 fn part_1(data: &str) -> u64 {
 
-    let (signal_data, mut gates) = data.split_once("\n\n").map(|(s, g)| (s, g.trim().split("\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
+    let (signal_data, mut gates) = data.split_once("\r\n\r\n").map(|(s, g)| (s, g.trim().split("\r\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
 
-    let mut signals: HashMap<&str, u8> = signal_data.split("\n").map(|line| line.split_once(": ").map(|(k,v)| (k, v.as_bytes()[0] - b'0')).unwrap()).collect();
+    let mut signals: HashMap<&str, u8> = signal_data.split("\r\n").map(|line| line.split_once(": ").map(|(k,v)| (k, v.as_bytes()[0] - b'0')).unwrap()).collect();
 		
     find_output(&mut signals, &mut gates)
 }
 
 fn part_2(data: &str) -> String{
 
-    let (signal_data, gates) = data.split_once("\n\n").map(|(s, g)| (s, g.trim().split("\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
+    let (_signal_data, gates) = data.split_once("\r\n\r\n").map(|(s, g)| (s, g.trim().split("\r\n").map(|item| item.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>())).unwrap();
 
     let mut culprits = HashSet::new();
 
@@ -77,14 +77,14 @@ fn part_2(data: &str) -> String{
 		}
 
 		// If we cannot find the output signal of the second AND gate, the XOR and AND gate outputs must be swapped
-		if c == "" && a!= "" && b !="" && i > 0{
+		if c.is_empty() && !a.is_empty() && !b.is_empty() && i > 0{
 			culprits.insert(a.to_string());
 			culprits.insert(b.to_string());
 		}
 
 	}
 
-    let mut output: Vec<_> = culprits.iter().map(|x| x.clone()).collect();
+    let mut output: Vec<_> = culprits.iter().cloned().collect();
     output.sort();
 
     output.join(",")
