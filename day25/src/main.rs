@@ -3,6 +3,31 @@ use std::time::Instant;
 
 fn part_1(data: &str) {
 
+    let mut keys = Vec::new();
+    let mut locks = Vec::new();
+
+    for item in data.split("\r\n\r\n"){
+
+        let mut reg = [0;5];
+
+        for (y, line) in item.lines().enumerate(){
+            for (x, c) in line.bytes().enumerate(){                
+                if c == b'#'{
+                    reg[x] += 1;
+                }
+            }
+        }
+
+        if item.starts_with("#"){
+            locks.push(reg);
+        } else{
+            keys.push(reg);
+        }
+    }
+
+    println!("Locks: {:?}", locks);
+    println!("Keys: {:?}", keys);
+
 
 }
 
